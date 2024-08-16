@@ -1,45 +1,64 @@
-import { useState, ChangeEvent, FormEvent, Dispatch } from "react";
+import { useState, ChangeEvent, FormEvent, Dispatch, useEffect } from "react";
 import type { Activity } from "../types";
 import { categories } from "../data/category";
-import { ActivityActions } from "../reducers/activityReducer";
+import { ActivityActions, ActivityState } from "../reducers/activityReducer";
 
+// Librerias
+import { v4 as uuidv4 } from 'uuid';  // Libreria para genererar ID unicos. Install: npm i --save-dev @types/uuid
+
+// Dispatch de Activities
 type FormProps = {
-  dispatch: Dispatch<ActivityActions> 
+  dispatch: Dispatch<ActivityActions>,
+  state: ActivityState
+};
+
+// Objeto inicial
+const initialState : Activity = {
+  id: uuidv4(),
+  category: 1,
+  name: "",
+  calories: 0,
 }
 
-export default function Form({dispatch} : FormProps) {
+export default function Form({ dispatch, state }: FormProps) {
+  const [activity, setActivity] = useState<Activity>(initialState);
 
-  const [activity, setActivity] = useState<Activity>({
-    category: 1,
-    name: "",
-    calories: 0,
-  });
+  useEffect(()=> {
+    if(state.activeId){
+      const selectedActivity = state.activities.filter( stateActivity => stateActivity.id === state.activeId )[0]
+      setActivity(selectedActivity);
+    }
+  }, [state.activeId])
 
-  const handleChange = (e: ChangeEvent<HTMLSelectElement> | ChangeEvent<HTMLInputElement>) => {
-
-    const isNumberField = ['category', 'calories'].includes(e.target.id);
+  const handleChange = (
+    e: ChangeEvent<HTMLSelectElement> | ChangeEvent<HTMLInputElement>
+  ) => {
+    const isNumberField = ["category", "calories"].includes(e.target.id);
 
     setActivity({
       ...activity,
-      [e.target.id]: isNumberField ? +e.target.value : e.target.value
+      [e.target.id]: isNumberField ? +e.target.value : e.target.value,
     });
-  }
+  };
 
   const isValidActivity = () => {
     const { name, calories } = activity;
-    return name.trim() !== '' && calories > 0;
-  }
+    return name.trim() !== "" && calories > 0;
+  };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault;
+    e.preventDefault();
 
-    dispatch({ type: 'save-activity', payload: {newActivity: activity}})
+    dispatch({ type: "save-activity", payload: { newActivity: activity } });
 
-
-  }
+    setActivity({
+      ...initialState,
+      id: uuidv4()
+    });
+  };
 
   return (
-    <form 
+    <form
       className="space-y-5 bg-white shadow p-10 rounded-lg"
       onSubmit={handleSubmit}
     >
@@ -98,7 +117,7 @@ export default function Form({dispatch} : FormProps) {
       <input
         type="submit"
         className="bg-gray-800 hover:bg-gray-900 w-full p-2 font-bold uppercase text-white cursor-pointer disabled:opacity-10"
-        value={activity.category === 1 ? 'Guardar Comida' : 'Guardar Ejercicio'}
+        value={activity.category === 1 ? "Guardar Comida" : "Guardar Ejercicio"}
         disabled={!isValidActivity()}
       />
     </form>
